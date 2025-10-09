@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "fifo_test_fixture.h"
+#include "fifo_test_fixture.hpp"
 
 using namespace FifoTemplates;
 

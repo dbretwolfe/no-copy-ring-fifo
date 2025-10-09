@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "no_copy_ring_fifo.h"
+#include "no_copy_ring_fifo.hpp"
 
 typedef uint32_t fifoDataType;
 

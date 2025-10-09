@@ -16,3 +16,6 @@ FetchContent_MakeAvailable(googletest)
   
 add_subdirectory(no_copy_ring_fifo)
 add_subdirectory(tests)
+
+include(GNUInstallDirs)
+install(TARGETS NoCopyRingFifo)

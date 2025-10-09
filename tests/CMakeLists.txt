@@ -1,10 +1,3 @@
-cmake_minimum_required(VERSION 3.1...3.27)
-
-project(
-  NoCopyRingFifoTestProj
-  VERSION 1.0
-  LANGUAGES C CXX)
-
 add_executable(NoCopyRingFifoTest)
 target_sources(NoCopyRingFifoTest PUBLIC 
   fifo_test.cpp
