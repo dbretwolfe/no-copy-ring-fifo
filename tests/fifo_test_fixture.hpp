@@ -13,7 +13,7 @@ protected:
     {
     }
     
-    std::vector<fifoDataType> GetTestVector(int size);
+    std::vector<fifoDataType> getTestVector(int size);
 
     static constexpr size_t maxFifoSize = 10;
     FifoTemplates::NoCopyRingFifo<fifoDataType> fifo = FifoTemplates::NoCopyRingFifo<fifoDataType>(maxFifoSize);

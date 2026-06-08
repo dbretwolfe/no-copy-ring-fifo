@@ -82,33 +82,38 @@ namespace FifoTemplates
             _ringBufferSpan = std::span<T>(_ringBuffer);
         }
 
+        const std::vector<T> data()
+        {
+            return _ringBuffer;
+        }
+
         // Reserve a block of FIFO memory, returning a FifoBlock object.
         // An exception is thrown if there is insufficient reservable space.
-        DataBlock Reserve(size_t size)
+        DataBlock reserve(size_t size)
         {
-            if (size > ReservableSize()) {
+            if (size > reservableSize()) {
                 throw std::overflow_error(
                     std::format("Not enough free space in FIFO for reserve - requested {}, available {}",
                     size,
-                    ReservableSize())
+                    reservableSize())
                     );
             }
 
             _reserved += size;
 
-            return GetDataBlock(_writeIndex, size);
+            return getDataBlock(_writeIndex, size);
         }
 
         // Commit a block of data to the FIFO.  This increases the amount of committed data that is
         // available to be read and decreases the amount of reserved data, both by the commit size.
         // An exception is throw if there is insufficient reserved space for the commit.
-        void Commit(size_t size)
+        void commit(size_t size)
         {
-            if (size > CommitableSize()) {
+            if (size > commitableSize()) {
                 throw std::overflow_error(
                     std::format("Not enough reserved space in FIFO for commit - requested {}, available {}", 
                     size,
-                    CommitableSize()
+                    commitableSize()
                     )
                 );
             }
@@ -123,24 +128,24 @@ namespace FifoTemplates
             _readableCv.notify_all();
         }
 
-        inline size_t ReservableSize() const { return (_ringBuffer.size() - (_reserved + _committed)); }
-        inline size_t CommitableSize() const { return _reserved; }
-        inline size_t ReadableSize() const { return _committed; }
+        inline size_t reservableSize() const { return (_ringBuffer.size() - (_reserved + _committed)); }
+        inline size_t commitableSize() const { return _reserved; }
+        inline size_t readableSize() const { return _committed; }
 
         template <typename Duration>
-        bool WaitOnReservableCv(size_t size, Duration timeout)
+        bool waitOnReservableCv(size_t size, Duration timeout)
         {
             auto lock = std::unique_lock<std::mutex>(_fifoMutex);
-            return _reservableCv.wait_for(lock, timeout, [this, size]() { return (ReservableSize() >= size); });
+            return _reservableCv.wait_for(lock, timeout, [this, size]() { return (reservableSize() >= size); });
         }
         
         template <typename Duration>
-        bool WaitOnReservableBusy(size_t size, Duration timeout)
+        bool waitOnReservableBusy(size_t size, Duration timeout)
         {
             auto startTime = std::chrono::steady_clock::now();
             auto endTime = startTime + timeout;
 
-            while (ReservableSize() < size) {
+            while (reservableSize() < size) {
                 auto currentTime = std::chrono::steady_clock::now();
                 if (currentTime >= endTime) {
                     return false;
@@ -151,19 +156,19 @@ namespace FifoTemplates
         }
 
         template <typename Duration>
-        bool WaitOnReadableCv(size_t size, Duration timeout)
+        bool waitOnReadableCv(size_t size, Duration timeout)
         {
             auto lock = std::unique_lock<std::mutex>(_fifoMutex);
-            return _reservableCv.wait_for(lock, timeout, [this, size]() { return (ReadableSize() >= size); });
+            return _reservableCv.wait_for(lock, timeout, [this, size]() { return (readableSize() >= size); });
         }
 
         template <typename Duration>
-        bool WaitOnReadableBusy(size_t size, Duration timeout)
+        bool waitOnReadableBusy(size_t size, Duration timeout)
         {
             auto startTime = std::chrono::steady_clock::now();
             auto endTime = startTime + timeout;
 
-            while (ReadableSize() < size) {
+            while (readableSize() < size) {
                 auto currentTime = std::chrono::steady_clock::now();
                 if (currentTime >= endTime) {
                     return false;
@@ -174,7 +179,7 @@ namespace FifoTemplates
         }
 
         // Get a block of comitted data to read.
-        DataBlock ReadBlock(size_t size)
+        DataBlock readBlock(size_t size)
         {
             if (size > _committed) {
                 throw std::underflow_error(
@@ -182,10 +187,10 @@ namespace FifoTemplates
                 );
             }
 
-            return GetDataBlock(_readIndex, size);
+            return getDataBlock(_readIndex, size);
         }
 
-        void ReleaseReadData(size_t size)
+        void releaseReadData(size_t size)
         {
             if (size > _committed) {
                 throw std::underflow_error(
@@ -201,7 +206,7 @@ namespace FifoTemplates
             _reservableCv.notify_all();
         }
 
-        void Reset(void)
+        void reset(void)
         {
             _readIndex = 0;
             _writeIndex = 0;
@@ -212,8 +217,8 @@ namespace FifoTemplates
         const size_t maxSize;
         
     private:
-        // Get a block of data starting at the specified index.  This is used by both the Reserve and ReadBlock functions.
-        DataBlock GetDataBlock(size_t& index, size_t size)
+        // Get a block of data starting at the specified index.  This is used by both the reserve and readBlock functions.
+        DataBlock getDataBlock(size_t& index, size_t size)
         {
             if (size > _ringBuffer.size()) {
                 throw std::overflow_error(
